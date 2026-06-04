@@ -7668,7 +7668,7 @@ function saveCtTab(){
     cfg.ctData[id]=[];
   }
   sv();closeCtManage();
-  rCustomTabNav();ensureCtPages();rCtAdminList();
+  rCustomTabNav();ensureCtPages();rCtAdminList();rHomeSecAdmin();
   toast('저장됨');
 }
 
@@ -7676,8 +7676,7 @@ function deleteCtTab(tabId){
   showModal('⚠️','이 탭과 모든 항목을 삭제할까요?','삭제',function(){
     cfg.customTabs=(cfg.customTabs||[]).filter(function(t){return t.id!==tabId;});
     if(cfg.ctData)delete cfg.ctData[tabId];
-    sv();rCustomTabNav();ensureCtPages();rCtAdminList();toast('삭제됨');
-    go('admin');
+    sv();rCustomTabNav();ensureCtPages();rCtAdminList();rHomeSecAdmin();toast('삭제됨');
   },{danger:true});
 }
 
