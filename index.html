@@ -1243,9 +1243,6 @@ footer{text-align:center;padding:32px;color:var(--text-light);font-size:.68rem;b
         <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
       </svg>
     </button>
-    <div class="fab-wrap" id="fabWrap" style="display:none">
-      <button class="n-wr fab-main" onclick="edId=null;edFromCatView();go('editor')" id="fabBtn">+</button>
-    </div>
 
   </div>
   </div>
@@ -1616,6 +1613,8 @@ footer{text-align:center;padding:32px;color:var(--text-light);font-size:.68rem;b
       <div style="display:flex;align-items:center;gap:6px">
         <div class="prompt-nsfw" id="pmt19Btn" onclick="toggle19()" style="display:none;cursor:pointer;align-items:center;gap:5px" title="NSFW 블러 해제"><input type="checkbox" id="pmt19Cb" style="accent-color:#1A1A1A;pointer-events:none" tabindex="-1">19</div>
         <button class="prompt-nsfw" id="pmtNsfwBtn" onclick="cycleNsfw()">NSFW</button>
+        <button class="prompt-nsfw admin-only" onclick="copyShareLink({cat:'persona'})" style="display:none" id="pmtShareBtn">공유</button>
+        <button class="n-wr admin-only" onclick="pmtEditId=null;go('pmt-editor')" style="display:none" id="pmtAddBtn">+ 추가</button>
       </div>
     </div>
     <div class="persona-tags hidden" id="personaTags"></div>
@@ -6651,7 +6650,7 @@ function ensureCtPages(){
     pg.className='page';
     pg.id='pg-ct_'+t.id;
     var lockBadge=t.private?'<span style="font-size:.65rem;background:var(--accent-soft);padding:3px 7px;border-radius:6px;color:var(--text-sub)">🔒 비공개</span>':'';
-    var shareBtn=(isAdmin&&!t.private)?'<button class="n-wr" style="background:transparent" onclick="copyShareLink({cat:\''+t.id+'\'})" title="이 카테고리 공유 링크 복사">🔗</button>':'';
+    var shareBtn=(isAdmin&&!t.private)?'<button class="prompt-nsfw" onclick="copyShareLink({cat:\''+t.id+'\'})" title="이 카테고리 공유 링크 복사">공유</button>':'';
     pg.innerHTML='<div class="pw">'+
       '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;flex-wrap:wrap;gap:10px">'+
         '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">'+
