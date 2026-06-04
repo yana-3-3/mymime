@@ -2383,7 +2383,7 @@ function go(p){
   if(p==='pair')rPair();
   if(p==='prompt'){rPersonaTags();rPromptGrid();}
   // 커스텀 탭 렌더링
-  if(p.indexOf('ct_')===0){rCustomTab(p.substring(3));}
+  if(p.indexOf('ct_')===0){rCustomTab(p.replace('ct_',''));}
 }
 var dtBackTarget='home';
 function goBack(){
@@ -2755,7 +2755,7 @@ function renderHomeSecCard(key,item){
 function gotoHomeSec(key){
   if(key==='pair')go('pair');
   else if(key==='persona')go('prompt');
-  else if(key.indexOf('ct_')===0)go(key);
+  else if(key.indexOf('ct_')===0)go('ct_'+key);
 }
 
 // 홈 섹션 렌더링
