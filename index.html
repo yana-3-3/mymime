@@ -2735,14 +2735,9 @@ function rHomeSections(){
   }
   var avail=getHomeAvailable();
   var availKeys=avail.map(function(x){return x.key;});
-  // 설정된 순서 + 체크된 것만
+  // 설정된 순서 + 체크된 것만 (자동 채움 없음)
   var selected=(cfg.homeSections||[]).filter(function(k){return availKeys.indexOf(k)!==-1;});
-  // 처음 사용 시 기본값: 페어 + 페르소나
-  if(!cfg.homeSections){
-    selected=[];
-    if(availKeys.indexOf('pair')!==-1)selected.push('pair');
-    if(availKeys.indexOf('persona')!==-1)selected.push('persona');
-  }
+  console.log('[홈] homeSections:',cfg.homeSections,'availKeys:',availKeys,'selected:',selected);
   if(!selected.length){
     wrap.innerHTML='';
     $('#pE').style.display='';
@@ -2781,11 +2776,8 @@ function rHomeSecAdmin(){
     box.innerHTML='<div style="font-size:.78rem;color:var(--text-light);padding:14px 0">표시 가능한 카테고리가 없어요. 페어/페르소나 탭을 숨김 해제하거나 커스텀 탭을 추가해주세요.</div>';
     return;
   }
-  if(!cfg.homeSections){
-    cfg.homeSections=[];
-    if(avail.find(function(x){return x.key==='pair';}))cfg.homeSections.push('pair');
-    if(avail.find(function(x){return x.key==='persona';}))cfg.homeSections.push('persona');
-  }
+  // 처음에는 빈 배열로 시작 (자동 체크 안 함)
+  if(!cfg.homeSections)cfg.homeSections=[];
   var availKeys=avail.map(function(x){return x.key;});
   cfg.homeSections=cfg.homeSections.filter(function(k){return availKeys.indexOf(k)!==-1;});
   // 순서: 선택된 것 먼저, 미선택은 뒤에
