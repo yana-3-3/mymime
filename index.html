@@ -567,7 +567,7 @@ details[open] .fold-summary::before{transform:rotate(90deg)}
 
 /* ── Home Sections (카테고리별 섹션) ── */
 .home-section{margin-bottom:48px}
-.home-sec-head{display:flex;align-items:center;gap:14px;padding-bottom:10px;margin-bottom:18px;border-bottom:1px dashed var(--border-h);cursor:pointer;transition:opacity .2s}
+.home-sec-head{display:flex;align-items:center;gap:14px;padding-bottom:10px;margin-bottom:18px;cursor:pointer;transition:opacity .2s}
 .home-sec-head:hover{opacity:.7}
 .home-sec-label{font-family:var(--font-d);font-size:.82rem;font-weight:500;letter-spacing:.18em;color:var(--text);text-transform:uppercase;flex-shrink:0}
 .home-sec-line{flex:1;height:1px;background:linear-gradient(90deg,var(--border-h) 0%,transparent 100%)}
@@ -2700,13 +2700,46 @@ function renderHomeSecCard(key,item){
     h+='</div>';
     return h;
   }
-  // 커스텀 탭 항목 — 간단한 카드 형식 (제목 + 날짜)
+  // 커스텀 탭 항목 — 탭 레이아웃에 따라 분기
+  if(key.indexOf('ct_')===0){
+    var ctTab=(cfg.customTabs||[]).find(function(t){return t.id===key;});
+    var layout=ctTab?ctTab.layout:'card';
+    var isNsfw=!!item.nsfw;
+    var isNsfwBlur=isNsfw&&!isAdmin; // 홈에선 항상 검열 (19 토글은 각 탭 안에서만)
+
+    if(layout==='memo'){
+      // 메모형 카드
+      var memoTitle=isNsfwBlur?'NSFW 메모':esc(item.title||'(제목 없음)');
+      var memoBody=isNsfwBlur?'<span style="color:var(--text-light);font-style:italic">상세보기에서만 볼 수 있어요</span>':esc(item.body||'');
+      var nsfwLabel=isNsfw?'<span class="pmt-card-nsfw" style="position:static;display:inline-block;margin-right:6px;vertical-align:middle">NSFW</span>':'';
+      return '<div class="memo-card" onclick="openCtDetail(\''+key+'\',\''+item.id+'\')">'+
+        '<div class="memo-card-title">'+nsfwLabel+memoTitle+'</div>'+
+        '<div class="memo-card-body">'+memoBody+'</div>'+
+        '<div class="memo-card-foot">'+
+          '<div class="memo-card-tags"></div>'+
+          '<span class="memo-card-date">'+fDateOnly(item.ts)+'</span>'+
+        '</div></div>';
+    }
+    // 카드형
+    var ctCardImg=(item.imgs&&item.imgs[0])||item.cov||item.thumb||'';
+    var ctImgStyle=isNsfwBlur?' style="filter:blur(8px);transform:scale(1.1)"':'';
+    var ctBadge=isNsfw?'<div class="pmt-card-nsfw">NSFW</div>':'';
+    var h='<div class="pmt-card" onclick="openCtDetail(\''+key+'\',\''+item.id+'\')">';
+    h+=ctCardImg?'<img src="'+ctCardImg+'" loading="lazy"'+ctImgStyle+'>':
+       '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:1.5rem;opacity:.12">✦</div>';
+    h+='<div class="pmt-card-dim"></div>';
+    h+=ctBadge;
+    h+='<div class="pmt-card-body"><div class="pmt-card-title">'+esc(item.title||'(제목 없음)')+'</div></div>';
+    h+='</div>';
+    return h;
+  }
+
+  // (혹시 모를) 그 외 fallback
   var ctImg='';
   if(item.cov)ctImg='<div class="pc-bg" style="background-image:url('+item.cov+')"></div>';
   else if(item.thumb)ctImg='<div class="pc-bg" style="background-image:url('+item.thumb+')"></div>';
   var ctTitle=item.t||item.title||item.name||'(제목 없음)';
   var ctDate=item.d||item.date||'';
-  var clickFn=item.id?('openCtItem&&typeof openCtItem===\'function\'?openCtItem(\''+key+'\','+JSON.stringify(item.id)+'):null'):'null';
   var h='<div class="pc" style="height:240px" onclick="go(\''+key+'\')">';
   h+=ctImg||'<div class="pc-bg" style="background:var(--bg2)"></div>';
   h+='<div class="pc-dim"></div>';
@@ -7063,6 +7096,7 @@ function renumberPrompts(type){
 
 var ctEditTabId=null, ctEditItemId=null, ctCurSub={}, ctCurTag={}, ctCurPage={};
 var ctNsfwState={}; // 0=전체, 1=NSFW만, 2=NSFW숨김
+var ct19Unlocked={}; // 탭별 19 블러해제 상태
 var ctManageEditId=null, ctmLayout='card', ctmUseSub=false, ctmUseTag=false, ctmSubs=[], ctmPrivate=false;
 var ctEdImgs=[];
 
@@ -7099,6 +7133,7 @@ function ensureCtPages(){
           (t.useSub?'<div class="prompt-tabs" id="ctSubs_'+t.id+'"></div>':'')+
         '</div>'+
         '<div style="display:flex;align-items:center;gap:6px">'+
+          (isAdmin?'':'<div class="prompt-nsfw" id="ct19Btn_'+t.id+'" onclick="toggleCt19(\''+t.id+'\')" style="cursor:pointer;align-items:center;gap:5px;display:none" title="NSFW 블러 해제"><input type="checkbox" id="ct19Cb_'+t.id+'" style="accent-color:#1A1A1A;pointer-events:none" tabindex="-1">19</div>')+
           '<button class="prompt-nsfw" id="ctNsfwBtn_'+t.id+'" onclick="cycleCtNsfw(\''+t.id+'\')">NSFW</button>'+
           shareBtn+
           (isAdmin?'<button class="n-wr" onclick="openCtEditor(\''+t.id+'\')">+ 추가</button>':'')+
@@ -7140,6 +7175,13 @@ function rCustomTab(tabId){
   if(nsfwBtn){
     nsfwBtn.className='prompt-nsfw'+(nsfwState===1?' only':'')+(nsfwState===2?' hide':'');
   }
+  // 19 버튼 표시/상태 업데이트 (NSFW만 보기 모드일 때만 노출)
+  var btn19=$('#ct19Btn_'+tabId);
+  if(btn19){
+    btn19.style.display=(!isAdmin && nsfwState===1)?'flex':'none';
+    var cb19=$('#ct19Cb_'+tabId);
+    if(cb19)cb19.checked=!!ct19Unlocked[tabId];
+  }
 
   // 데이터 필터
   var items=getCtData(tabId).slice();
@@ -7174,10 +7216,11 @@ function rCustomTab(tabId){
 
   if(tab.layout==='card'){
     grid.className='prompt-grid';
+    var unlocked19=!!ct19Unlocked[tabId];
     grid.innerHTML=paged.map(function(item){
       var img=item.imgs&&item.imgs[0]||'';
       var isNsfw=!!item.nsfw;
-      var blurStyle=isNsfw&&nsfwState===0?' style="filter:blur(8px);transform:scale(1.1)"':'';
+      var blurStyle=isNsfw&&!isAdmin&&!unlocked19?' style="filter:blur(8px);transform:scale(1.1)"':'';
       return '<div class="pmt-card" onclick="openCtDetail(\''+tabId+'\',\''+item.id+'\')" oncontextmenu="copyCtItemRC(event,\''+tabId+'\',\''+item.id+'\')">'
         +(isNsfw?'<div class="pmt-card-nsfw">NSFW</div>':'')
         +(img?'<img src="'+img+'" loading="lazy"'+blurStyle+'>':
@@ -7198,6 +7241,7 @@ function rCustomTab(tabId){
     },30);
   } else {
     grid.className='memo-grid';
+    var unlocked19m=!!ct19Unlocked[tabId];
     grid.innerHTML=paged.map(function(item){
       var tagsHtml='';
       if(tab.useTag&&Array.isArray(item.tags)&&item.tags.length){
@@ -7206,9 +7250,12 @@ function rCustomTab(tabId){
           return tag?'<span class="memo-card-tag">'+esc(tag.name)+'</span>':'';
         }).filter(Boolean).join('');
       }
+      var isNsfwMemo=!!item.nsfw && !isAdmin && !unlocked19m;
+      var titleHtml=isNsfwMemo?'NSFW 메모':esc(item.title||'(제목 없음)');
+      var bodyHtml=isNsfwMemo?'<span style="color:var(--text-light);font-style:italic">상세보기에서만 볼 수 있어요</span>':esc(item.body||'');
       return '<div class="memo-card" onclick="openCtDetail(\''+tabId+'\',\''+item.id+'\')" oncontextmenu="copyCtItemRC(event,\''+tabId+'\',\''+item.id+'\')">'+
-        '<div class="memo-card-title">'+esc(item.title||'(제목 없음)')+'</div>'+
-        '<div class="memo-card-body">'+esc(item.body||'')+'</div>'+
+        '<div class="memo-card-title">'+(item.nsfw?'<span class="pmt-card-nsfw" style="position:static;display:inline-block;margin-right:6px;vertical-align:middle">NSFW</span>':'')+titleHtml+'</div>'+
+        '<div class="memo-card-body">'+bodyHtml+'</div>'+
         '<div class="memo-card-foot">'+
           '<div class="memo-card-tags">'+tagsHtml+'</div>'+
           '<span class="memo-card-date">'+fDateOnly(item.ts)+'</span>'+
@@ -7662,6 +7709,14 @@ function cycleCtNsfw(tabId){
   s=(s+1)%3;
   ctNsfwState[tabId]=s;
   ctCurPage[tabId]=1;
+  // NSFW만 보기 모드를 벗어나면 19 잠금 복구
+  if(s!==1)ct19Unlocked[tabId]=false;
+  rCustomTab(tabId);
+}
+function toggleCt19(tabId){
+  ct19Unlocked[tabId]=!ct19Unlocked[tabId];
+  var cb=$('#ct19Cb_'+tabId);
+  if(cb)cb.checked=ct19Unlocked[tabId];
   rCustomTab(tabId);
 }
 
