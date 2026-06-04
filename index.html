@@ -2737,13 +2737,10 @@ function rHomeSections(){
   var availKeys=avail.map(function(x){return x.key;});
   // 설정된 순서 + 체크된 것만 (자동 채움 없음)
   var selected=(cfg.homeSections||[]).filter(function(k){return availKeys.indexOf(k)!==-1;});
-  console.log('[홈] homeSections:',cfg.homeSections,'availKeys:',availKeys,'selected:',selected);
   if(!selected.length){
-    wrap.innerHTML='';
-    $('#pE').style.display='';
+    wrap.innerHTML='<div class="empty"><div>✎</div><h3>아직 표시할 내용이 없어요</h3><p>관리 탭에서 홈에 표시할 카테고리를 선택해주세요</p></div>';
     return;
   }
-  $('#pE').style.display='none';
   var arrowSvg='<svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>';
   var html=selected.map(function(key){
     var info=avail.find(function(x){return x.key===key;});
