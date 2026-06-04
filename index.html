@@ -1593,6 +1593,7 @@ footer{text-align:center;padding:32px;color:var(--text-light);font-size:.68rem;b
         <button class="n-wr admin-only" id="pairAddBtn" onclick="openPairModal()" style="display:none">+ 페어 추가</button>
       </div>
     </div>
+    <div class="persona-tags" id="pairCatTags"></div>
     <div id="pairListWrap">
       <div id="pairGrid" class="pair-grid" style="min-height:0"></div>
       <div style="display:flex;justify-content:center;margin-top:20px" id="pairPagi" class="pagi"></div>
@@ -3848,8 +3849,14 @@ function rPair(){
   var pagi=$('#pairPagi');
   // 이전에 설정된 minHeight 초기화 (페이지 넘어갈 때 박스 길어짐 방지)
   if(grid)grid.style.minHeight='';
-  // private 필터링
-  var visiblePairs=pairs.filter(function(p){return !p.private||isAdmin;});
+  // 카테고리 태그 바 렌더
+  rPairCatTagBar();
+  // private + 카테고리 태그 필터링
+  var visiblePairs=pairs.filter(function(p){
+    if(p.private&&!isAdmin)return false;
+    if(curPairCatTag&&(!p.catTags||p.catTags.indexOf(curPairCatTag)===-1))return false;
+    return true;
+  });
   if(!visiblePairs.length){
     grid.innerHTML='';
     $('#pairEmpty').style.display='';
@@ -3919,6 +3926,174 @@ function rPair(){
   // Bind drag events for admin
   if(isAdmin)initPairDrag();
 }
+
+/* ========================================
+   페어 카테고리 태그 시스템 (페르소나 태그 패턴 복제)
+   - cfg.pairCatTags: [{id, name}, ...] 마스터 목록
+   - 각 pair.catTags: 이 페어가 속한 카테고리 태그 id 배열
+   - curPairCatTag: 현재 선택된 필터
+   - pairCatTags: 모달 편집용 임시 배열
+   ======================================== */
+var curPairCatTag=null;
+var addingPairCatTag=false;
+var pairCatTags=[]; // 모달 편집용
+if(!cfg.pairCatTags)cfg.pairCatTags=[];
+
+/* ── 페어 탭 상단 필터 바 렌더 ── */
+function rPairCatTagBar(){
+  var bar=$('#pairCatTags');
+  if(!bar)return;
+  var tags=cfg.pairCatTags||[];
+  // 태그가 하나도 없고 관리자도 아니면 숨김
+  if(!tags.length&&!isAdmin){bar.classList.add('hidden');return;}
+  bar.classList.remove('hidden');
+  var html='';
+  html+='<button class="persona-tag'+(curPairCatTag===null?' on':'')+'" onclick="selectPairCatTag(null)">전체</button>';
+  tags.forEach(function(t){
+    var isOn=curPairCatTag===t.id;
+    html+='<span class="persona-tag-wrap">';
+    html+='<button class="persona-tag'+(isOn?' on':'')+'" onclick="selectPairCatTag(\''+t.id+'\')">'+esc(t.name)+'</button>';
+    if(isAdmin){
+      html+='<button class="persona-tag-menu" onclick="event.stopPropagation();togglePairCatTagMenu(\''+t.id+'\',event)" title="태그 관리">⋯</button>';
+      html+='<div class="persona-tag-drop" id="pairTagDrop_'+t.id+'">';
+      html+='<button onclick="event.stopPropagation();closeAllPairCatTagDrops();renamePairCatTag(\''+t.id+'\')">✎ 이름 수정</button>';
+      html+='<button class="danger" onclick="event.stopPropagation();closeAllPairCatTagDrops();deletePairCatTag(\''+t.id+'\')">✕ 삭제</button>';
+      html+='</div>';
+    }
+    html+='</span>';
+  });
+  if(isAdmin){
+    if(addingPairCatTag){
+      html+='<span class="persona-tag-input-wrap">';
+      html+='<input type="text" id="newPairCatTagInput" placeholder="태그 이름" maxlength="20" onkeydown="onPairCatTagInputKey(event)">';
+      html+='<button onclick="cancelAddPairCatTag()" title="취소">✕</button>';
+      html+='</span>';
+    } else {
+      html+='<button class="persona-tag-add" onclick="startAddPairCatTag()">+ 태그</button>';
+    }
+  }
+  bar.innerHTML=html;
+  if(addingPairCatTag){
+    var inp=$('#newPairCatTagInput');
+    if(inp)inp.focus();
+  }
+}
+
+function selectPairCatTag(tagId){
+  curPairCatTag=tagId;
+  pairPage=0;
+  closeAllPairCatTagDrops();
+  rPair();
+}
+
+function startAddPairCatTag(){
+  if(!isAdmin)return;
+  addingPairCatTag=true;
+  rPairCatTagBar();
+}
+function cancelAddPairCatTag(){
+  addingPairCatTag=false;
+  rPairCatTagBar();
+}
+function onPairCatTagInputKey(e){
+  if(e.key==='Enter'){
+    e.preventDefault();
+    confirmAddPairCatTag();
+  } else if(e.key==='Escape'){
+    cancelAddPairCatTag();
+  }
+}
+function confirmAddPairCatTag(){
+  if(!isAdmin)return;
+  var inp=$('#newPairCatTagInput');
+  if(!inp)return;
+  var name=inp.value.trim();
+  if(!name){cancelAddPairCatTag();return;}
+  if(!cfg.pairCatTags)cfg.pairCatTags=[];
+  if(cfg.pairCatTags.find(function(x){return x.name===name})){
+    toast('같은 이름의 태그가 있어요');
+    return;
+  }
+  var newId='pct_'+Date.now();
+  cfg.pairCatTags.push({id:newId,name:name});
+  addingPairCatTag=false;
+  sv();
+  rPairCatTagBar();
+}
+
+function renamePairCatTag(id){
+  if(!isAdmin)return;
+  var tag=(cfg.pairCatTags||[]).find(function(t){return t.id===id});
+  if(!tag)return;
+  var newName=prompt('태그 이름 수정',tag.name);
+  if(newName===null)return;
+  newName=newName.trim();
+  if(!newName)return;
+  if(cfg.pairCatTags.find(function(x){return x.id!==id&&x.name===newName})){
+    toast('같은 이름의 태그가 있어요');
+    return;
+  }
+  tag.name=newName;
+  sv();
+  rPairCatTagBar();
+}
+
+function deletePairCatTag(id){
+  if(!isAdmin)return;
+  var tag=(cfg.pairCatTags||[]).find(function(t){return t.id===id});
+  if(!tag)return;
+  showModal('🗑️','"'+tag.name+'" 태그를 삭제할까요?<br><span style="font-size:.75rem;color:var(--text-light)">(페어들의 태그 연결도 해제돼요)</span>','삭제',function(){
+    cfg.pairCatTags=(cfg.pairCatTags||[]).filter(function(t){return t.id!==id});
+    // 페어에서도 해당 태그 제거
+    pairs.forEach(function(p){
+      if(p.catTags)p.catTags=p.catTags.filter(function(x){return x!==id});
+    });
+    if(curPairCatTag===id)curPairCatTag=null;
+    sv();
+    rPair();
+    toast('삭제됨');
+  });
+}
+
+function togglePairCatTagMenu(id,e){
+  if(e)e.stopPropagation();
+  var drop=$('#pairTagDrop_'+id);
+  if(!drop)return;
+  var wasOpen=drop.classList.contains('open');
+  closeAllPairCatTagDrops();
+  if(!wasOpen)drop.classList.add('open');
+}
+function closeAllPairCatTagDrops(){
+  $$('#pairCatTags .persona-tag-drop').forEach(function(d){d.classList.remove('open');});
+}
+
+/* ── 페어 모달 안의 카테고리 태그 선택 UI ── */
+function rPairModalCatTags(){
+  var area=$('#pairModalCatTagsArea');
+  if(!area)return;
+  var tags=cfg.pairCatTags||[];
+  if(!tags.length){
+    area.innerHTML='<span style="font-size:.74rem;color:var(--text-light)">아직 카테고리 태그가 없어요. 페어 탭에서 + 태그로 먼저 만들어주세요.</span>';
+    return;
+  }
+  var html='';
+  tags.forEach(function(t){
+    var isOn=pairCatTags.indexOf(t.id)!==-1;
+    html+='<button type="button" class="persona-tag'+(isOn?' on':'')+'" onclick="togglePairCatTagInModal(\''+t.id+'\')">'+esc(t.name)+'</button>';
+  });
+  area.innerHTML=html;
+}
+function togglePairCatTagInModal(id){
+  var i=pairCatTags.indexOf(id);
+  if(i===-1)pairCatTags.push(id);
+  else pairCatTags.splice(i,1);
+  rPairModalCatTags();
+}
+
+// 외부 클릭 시 드롭다운 닫기
+document.addEventListener('click',function(e){
+  if(!e.target.closest('#pairCatTags'))closeAllPairCatTagDrops();
+});
 
 /* ── Pair drag-to-reorder ── */
 var pairDragIdx=null;
@@ -4308,6 +4483,7 @@ function openPairModal(editId){
     pairThumbData=p.thumb||'';
     pairThumbOrig=p.thumbOrig||p.thumb||'';
     pairTags=(p.tags||[]).slice();
+    pairCatTags=(p.catTags||[]).slice();
     $('#pairPrivate').checked=!!p.private;
   }else{
     $('#pairModalTitle').textContent='페어 추가';
@@ -4319,9 +4495,11 @@ function openPairModal(editId){
     $('#pairColorB').value='#D5D5D5';
     $('#pairDate').value=new Date().toISOString().slice(0,10);
     $('#pairPrivate').checked=false;
+    pairCatTags=[];
   }
   rPairThumbPreview();
   renderPairTags();
+  rPairModalCatTags();
   $('#pairModalDim').classList.add('on');
 }
 function closePairModal(){$('#pairModalDim').classList.remove('on');}
@@ -4339,9 +4517,9 @@ function savePair(){
   var pv=$('#pairPrivate').checked;
   if(editingPairId){
     var p=pairs.find(function(x){return x.id===editingPairId});
-    if(p){p.nameA=nA;p.nameB=nB;p.date=dt;p.infoA=iA;p.infoB=iB;p.colorA=cA;p.colorB=cB;p.thumb=pairThumbData;p.tags=pairTags.slice();p.private=pv;}
+    if(p){p.nameA=nA;p.nameB=nB;p.date=dt;p.infoA=iA;p.infoB=iB;p.colorA=cA;p.colorB=cB;p.thumb=pairThumbData;p.tags=pairTags.slice();p.catTags=pairCatTags.slice();p.private=pv;}
   }else{
-    pairs.push({id:'p'+Date.now(),nameA:nA,nameB:nB,date:dt,infoA:iA,infoB:iB,colorA:cA,colorB:cB,thumb:pairThumbData,tags:pairTags.slice(),imgA:'',imgB:'',messages:[],private:pv});
+    pairs.push({id:'p'+Date.now(),nameA:nA,nameB:nB,date:dt,infoA:iA,infoB:iB,colorA:cA,colorB:cB,thumb:pairThumbData,tags:pairTags.slice(),catTags:pairCatTags.slice(),imgA:'',imgB:'',messages:[],private:pv});
   }
   sv();rPair();closePairModal();
   if(curPairId&&editingPairId===curPairId)openPairDetail(curPairId);
@@ -4631,6 +4809,10 @@ function setAdmin(on){
   if(typeof showLoginUI==='function')showLoginUI(true);
   var pairAddBtn=$('#pairAddBtn');
   if(pairAddBtn)pairAddBtn.style.display=on?'':'none';
+  var pmtAddBtn=$('#pmtAddBtn');
+  if(pmtAddBtn)pmtAddBtn.style.display=on?'':'none';
+  var pmtShareBtn=$('#pmtShareBtn');
+  if(pmtShareBtn)pmtShareBtn.style.display=on?'':'none';
   var seriesAddBtn=$('#seriesAddBtn');
   if(seriesAddBtn)seriesAddBtn.style.display=on?'':'none';
   var bgmPlAdd=$('#bgmPlaylistAdd');
@@ -7462,6 +7644,10 @@ if(window._fbReady){
     <div class="ef">
       <label>시작일 (D-Day 기준)</label>
       <input type="date" id="pairDate">
+    </div>
+    <div class="ef">
+      <label>장르 (카테고리 태그)</label>
+      <div id="pairModalCatTagsArea" style="display:flex;flex-wrap:wrap;gap:6px;padding:8px 10px;border:1px solid var(--border);border-radius:7px;background:var(--bg);min-height:38px;align-items:center"></div>
     </div>
     <div class="ef">
       <label>해시태그</label>
