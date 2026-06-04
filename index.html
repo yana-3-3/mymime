@@ -2383,7 +2383,7 @@ function go(p){
   if(p==='pair')rPair();
   if(p==='prompt'){rPersonaTags();rPromptGrid();}
   // 커스텀 탭 렌더링
-  if(p.indexOf('ct_')===0){rCustomTab(p.replace('ct_',''));}
+  if(p.indexOf('ct_')===0){rCustomTab(p.substring(3));}
 }
 var dtBackTarget='home';
 function goBack(){
