@@ -2628,10 +2628,7 @@ function mkM(a){if(a.length<2)return mkG(a);return '<div class="mag"><div class=
 function getHomeAvailable(){
   var list=[];
   if(!cfg.hidePair)list.push({key:'pair',label:'PAIR',target:'pair'});
-  if(!cfg.hidePrompt){
-    list.push({key:'persona',label:'PERSONA',target:'prompt'});
-    list.push({key:'prompt',label:'PROMPT',target:'prompt'});
-  }
+  if(!cfg.hidePrompt)list.push({key:'persona',label:'PERSONA',target:'prompt'});
   (cfg.customTabs||[]).forEach(function(t){
     if(t.private&&!isAdmin)return;
     list.push({key:t.id,label:(t.name||'').toUpperCase(),target:t.id,ctId:t.id});
@@ -2648,12 +2645,8 @@ function getHomeSecItems(key,limit){
     return list.slice(0,limit);
   }
   if(key==='persona'){
-    var list=(prompts||[]).filter(function(p){return p.type==='persona'&&(isAdmin||p.priv!=='hidden')});
-    list.sort(function(a,b){return(b.ts||0)-(a.ts||0)});
-    return list.slice(0,limit);
-  }
-  if(key==='prompt'){
-    var list=(prompts||[]).filter(function(p){return p.type==='prompt'&&(isAdmin||p.priv!=='hidden')});
+    // 페르소나 탭 전체(persona/prompt 서브탭 모두) — 페어 탭과 같은 단위로 묶음
+    var list=(prompts||[]).filter(function(p){return isAdmin||p.priv!=='hidden';});
     list.sort(function(a,b){return(b.ts||0)-(a.ts||0)});
     return list.slice(0,limit);
   }
@@ -2727,8 +2720,7 @@ function renderHomeSecCard(key,item){
 // 화살표 클릭 시 이동할 페이지
 function gotoHomeSec(key){
   if(key==='pair')go('pair');
-  else if(key==='persona'){curPromptTab='persona';go('prompt');setTimeout(function(){if(typeof rPromptGrid==='function')rPromptGrid();},50);}
-  else if(key==='prompt'){curPromptTab='prompt';go('prompt');setTimeout(function(){if(typeof rPromptGrid==='function')rPromptGrid();},50);}
+  else if(key==='persona')go('prompt');
   else if(key.indexOf('ct_')===0)go(key);
 }
 
@@ -2736,6 +2728,11 @@ function gotoHomeSec(key){
 function rHomeSections(){
   var wrap=$('#homeSections');
   if(!wrap)return;
+  // 구버전 cfg 정리: 'prompt' 키는 더 이상 사용하지 않음
+  if(cfg.homeSections&&cfg.homeSections.indexOf('prompt')!==-1){
+    cfg.homeSections=cfg.homeSections.filter(function(k){return k!=='prompt';});
+    sv();
+  }
   var avail=getHomeAvailable();
   var availKeys=avail.map(function(x){return x.key;});
   // 설정된 순서 + 체크된 것만
