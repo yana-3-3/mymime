@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Blog</title>
+<title>MYMI</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;600;700&family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,wght@0,400;0,500;1,400&family=IBM+Plex+Mono:wght@300;400;500&family=Nanum+Myeongjo:wght@400;700;800&family=Nanum+Gothic:wght@400;700&display=swap" rel="stylesheet">
 <style>
@@ -464,8 +464,13 @@ details[open] .fold-summary::before{transform:rotate(90deg)}
 .atr button:hover{color:var(--text)}
 .ed-b{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:24px}
 .ed-b button{padding:9px 22px;border-radius:7px;font-size:.82rem;cursor:pointer;border:none;transition:all var(--tr);font-weight:500}
-.btn-g{background:var(--bg2);color:var(--text-sub)}.btn-g:hover{background:var(--border-h);color:var(--text)}
-.btn-p{background:var(--text);color:var(--bg)}.btn-p:hover{opacity:.8}
+.btn-g,.btn-p{padding:10px 22px;border-radius:8px;font-size:.84rem;font-weight:500;cursor:pointer;border:none;transition:all var(--tr);letter-spacing:-.005em;line-height:1}
+.btn-g{background:var(--bg2);color:var(--text-sub);border:1px solid var(--border)}
+.btn-g:hover{background:var(--border-h);color:var(--text);border-color:var(--border-h)}
+.btn-p{background:var(--text);color:var(--bg)}
+.btn-p:hover{opacity:.85;transform:translateY(-1px);box-shadow:var(--shadow-h)}
+.btn-p:active,.btn-g:active{transform:translateY(0)}
+.ed-b button{padding:10px 22px;border-radius:8px;font-size:.84rem;cursor:pointer;border:none;transition:all var(--tr);font-weight:500}
 
 /* Admin (redesigned) */
 .ab{background:var(--card);box-shadow:var(--shadow);border-radius:14px;padding:0;margin-bottom:20px;overflow:hidden}
@@ -1262,13 +1267,13 @@ footer{text-align:center;padding:32px;color:var(--text-light);font-size:.68rem;b
 <!-- LOGIN GATE -->
 <div class="page" id="pg-gate">
   <div class="pw" style="max-width:440px;text-align:center;padding-top:80px">
-    <div style="font-family:var(--font-d);font-size:2.2rem;margin-bottom:14px">Welcome</div>
+    <div style="font-family:var(--font-d);font-size:2.2rem;margin-bottom:14px">MYMI</div>
     <div style="color:var(--text-sub);font-size:.9rem;margin-bottom:36px;line-height:1.7" id="gateMsg">
       나만의 블로그를 만들고 싶으면 가입,<br>이미 코드가 있으면 로그인하세요.
     </div>
     <div style="display:flex;flex-direction:column;gap:10px;max-width:280px;margin:0 auto">
-      <button class="n-wr" onclick="openLoginModal()" style="padding:12px 24px;font-size:.92rem">로그인</button>
-      <button class="n-wr" onclick="openSignupModal()" style="padding:12px 24px;font-size:.92rem;background:var(--text);color:var(--bg)">가입하기</button>
+      <button class="btn-g" onclick="openLoginModal()" style="padding:13px 24px;font-size:.92rem">로그인</button>
+      <button class="btn-p" onclick="openSignupModal()" style="padding:13px 24px;font-size:.92rem">가입하기</button>
     </div>
     <div id="gateError" style="margin-top:20px;color:#c43;font-size:.82rem;min-height:18px"></div>
   </div>
@@ -7427,7 +7432,7 @@ function initCustomTabs(){
 }
 
 function startApp(){
-  var defCfg={name:'Blog',desc:'나만의 기록 공간',ht:'Blog',hd:'나만의 기록 공간',hbg:'',layout:'grid',accent:'#1A1A1A'};
+  var defCfg={name:'MYMI',desc:'',ht:'',hd:'',hbg:'',layout:'grid',accent:'#1A1A1A'};
 
   // Firestore에 이 유저의 데이터가 있었으면 Firebase → localStorage 순으로 로드
   // 없었으면 무조건 빈 기본값 (localStorage 캐시도 무시 — 다른 유저 데이터 오염 방지)
@@ -7484,6 +7489,7 @@ function startApp(){
     setAdmin(false);
     initCustomTabs();
     showLoginUI();
+    applyGateLock();
     return;
   }
   if(!window._blogOwnerId){
@@ -7493,6 +7499,7 @@ function startApp(){
     setAdmin(false);
     initCustomTabs();
     showLoginUI();
+    applyGateLock();
     return;
   }
 
@@ -7577,6 +7584,21 @@ function showLoginUI(){
   }
 }
 
+// 게이트 화면에서 탭/로고 잠그기
+function applyGateLock(){
+  // 페어/페르소나 탭 강제 숨김
+  var pt=$('#pairTab'); if(pt)pt.style.display='none';
+  var prt=$('#promptTab'); if(prt)prt.style.display='none';
+  var ct=$('#customTabLinks'); if(ct)ct.style.display='none';
+  // 로고 클릭 비활성화
+  var nL=$('#nL');
+  if(nL){
+    nL.onclick=null;
+    nL.style.cursor='default';
+    nL.style.pointerEvents='none';
+  }
+}
+
 // 공유 링크 차단 화면
 function showSharedBlocked(msg){
   $$('.page').forEach(function(x){x.classList.remove('on')});
@@ -7587,6 +7609,7 @@ function showSharedBlocked(msg){
     if(gm)gm.innerHTML='<span style="color:#c43">'+esc(msg)+'</span><br><span style="font-size:.78rem;color:var(--text-light);margin-top:8px;display:inline-block">접근 권한이 없어요</span>';
   }
   showLoginUI();
+  applyGateLock();
 }
 
 if(window._fbReady){
