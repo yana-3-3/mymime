@@ -2711,9 +2711,10 @@ function renderHomeSecCard(key,item){
       // 메모형 카드
       var memoTitle=isNsfwBlur?'NSFW 메모':esc(item.title||'(제목 없음)');
       var memoBody=isNsfwBlur?'<span style="color:var(--text-light);font-style:italic">상세보기에서만 볼 수 있어요</span>':esc(item.body||'');
-      var nsfwLabel=isNsfw?'<span class="pmt-card-nsfw" style="position:static;display:inline-block;margin-right:6px;vertical-align:middle">NSFW</span>':'';
+      var nsfwLabel=isNsfw?'<div class="pmt-card-nsfw">NSFW</div>':'';
       return '<div class="memo-card" onclick="openCtDetail(\''+key+'\',\''+item.id+'\')">'+
-        '<div class="memo-card-title">'+nsfwLabel+memoTitle+'</div>'+
+        nsfwLabel+
+        '<div class="memo-card-title">'+memoTitle+'</div>'+
         '<div class="memo-card-body">'+memoBody+'</div>'+
         '<div class="memo-card-foot">'+
           '<div class="memo-card-tags"></div>'+
@@ -7252,7 +7253,8 @@ function rCustomTab(tabId){
       var titleHtml=isNsfwMemo?'NSFW 메모':esc(item.title||'(제목 없음)');
       var bodyHtml=isNsfwMemo?'<span style="color:var(--text-light);font-style:italic">상세보기에서만 볼 수 있어요</span>':esc(item.body||'');
       return '<div class="memo-card" onclick="openCtDetail(\''+tabId+'\',\''+item.id+'\')" oncontextmenu="copyCtItemRC(event,\''+tabId+'\',\''+item.id+'\')">'+
-        '<div class="memo-card-title">'+(item.nsfw?'<span class="pmt-card-nsfw" style="position:static;display:inline-block;margin-right:6px;vertical-align:middle">NSFW</span>':'')+titleHtml+'</div>'+
+        (item.nsfw?'<div class="pmt-card-nsfw">NSFW</div>':'')+
+        '<div class="memo-card-title">'+titleHtml+'</div>'+
         '<div class="memo-card-body">'+bodyHtml+'</div>'+
         '<div class="memo-card-foot">'+
           '<div class="memo-card-tags">'+tagsHtml+'</div>'+
