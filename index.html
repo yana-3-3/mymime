@@ -2707,7 +2707,7 @@ function renderHomeSecCard(key,item){
     var isNsfw=!!item.nsfw;
     var isNsfwBlur=isNsfw&&!isAdmin; // 홈에선 항상 검열 (19 토글은 각 탭 안에서만)
 
-    if(layout==='memo'){
+    if(layout!=='card'){
       // 메모형 카드
       var memoTitle=isNsfwBlur?'NSFW 메모':esc(item.title||'(제목 없음)');
       var memoBody=isNsfwBlur?'<span style="color:var(--text-light);font-style:italic">상세보기에서만 볼 수 있어요</span>':esc(item.body||'');
@@ -7133,7 +7133,7 @@ function ensureCtPages(){
           (t.useSub?'<div class="prompt-tabs" id="ctSubs_'+t.id+'"></div>':'')+
         '</div>'+
         '<div style="display:flex;align-items:center;gap:6px">'+
-          (isAdmin?'':'<div class="prompt-nsfw" id="ct19Btn_'+t.id+'" onclick="toggleCt19(\''+t.id+'\')" style="cursor:pointer;align-items:center;gap:5px;display:none" title="NSFW 블러 해제"><input type="checkbox" id="ct19Cb_'+t.id+'" style="accent-color:#1A1A1A;pointer-events:none" tabindex="-1">19</div>')+
+          (isAdmin?'':'<button class="prompt-nsfw" id="ct19Btn_'+t.id+'" onclick="toggleCt19(\''+t.id+'\')" title="NSFW 블러 해제">19</button>')+
           '<button class="prompt-nsfw" id="ctNsfwBtn_'+t.id+'" onclick="cycleCtNsfw(\''+t.id+'\')">NSFW</button>'+
           shareBtn+
           (isAdmin?'<button class="n-wr" onclick="openCtEditor(\''+t.id+'\')">+ 추가</button>':'')+
@@ -7175,12 +7175,10 @@ function rCustomTab(tabId){
   if(nsfwBtn){
     nsfwBtn.className='prompt-nsfw'+(nsfwState===1?' only':'')+(nsfwState===2?' hide':'');
   }
-  // 19 버튼 표시/상태 업데이트 (NSFW만 보기 모드일 때만 노출)
+  // 19 버튼 상태 업데이트 (켜지면 only 스타일로 빨갛게)
   var btn19=$('#ct19Btn_'+tabId);
   if(btn19){
-    btn19.style.display=(!isAdmin && nsfwState===1)?'flex':'none';
-    var cb19=$('#ct19Cb_'+tabId);
-    if(cb19)cb19.checked=!!ct19Unlocked[tabId];
+    btn19.className='prompt-nsfw'+(ct19Unlocked[tabId]?' only':'');
   }
 
   // 데이터 필터
