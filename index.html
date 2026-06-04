@@ -564,6 +564,22 @@ details[open] .fold-summary::before{transform:rotate(90deg)}
 .sc-menu-drop button{display:block;width:100%;padding:9px 14px;border:none;background:none;color:var(--text);font-size:.78rem;text-align:left;cursor:pointer;transition:background .15s;font-family:inherit}
 .sc-menu-drop button:hover{background:var(--accent-soft)}
 .sc-menu-drop button.danger{color:#D4564A}
+
+/* ── Home Sections (카테고리별 섹션) ── */
+.home-section{margin-bottom:48px}
+.home-sec-head{display:flex;align-items:center;gap:14px;padding-bottom:10px;margin-bottom:18px;border-bottom:1px dashed var(--border-h);cursor:pointer;transition:opacity .2s}
+.home-sec-head:hover{opacity:.7}
+.home-sec-label{font-family:var(--font-d);font-size:.82rem;font-weight:500;letter-spacing:.18em;color:var(--text);text-transform:uppercase;flex-shrink:0}
+.home-sec-line{flex:1;height:1px;background:linear-gradient(90deg,var(--border-h) 0%,transparent 100%)}
+.home-sec-arrow{width:34px;height:34px;border-radius:50%;border:1px solid var(--border-h);background:var(--card);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all var(--tr);color:var(--text)}
+.home-sec-head:hover .home-sec-arrow{background:var(--text);color:var(--bg);border-color:var(--text);transform:translateX(2px)}
+.home-sec-arrow svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.home-sec-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.home-sec-grid.cols-card{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+@media(max-width:900px){.home-sec-grid,.home-sec-grid.cols-card{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:540px){.home-sec-grid,.home-sec-grid.cols-card{grid-template-columns:repeat(2,1fr);gap:10px}}
+.home-sec-empty{font-size:.78rem;color:var(--text-light);padding:30px 0;text-align:center;background:var(--bg2);border-radius:10px}
+
 .series-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
 .series-head .n-wr{padding:7px 14px;display:flex;align-items:center;gap:5px}
 @media(max-width:540px){.series-grid{grid-template-columns:1fr 1fr!important}}
@@ -1258,9 +1274,7 @@ footer{text-align:center;padding:32px;color:var(--text-light);font-size:.68rem;b
     <div class="hero-in"><div class="hero-t" id="hT">Blog</div><div class="hero-d" id="hD">나만의 기록 공간</div></div>
   </div>
   <div class="pw">
-    <div class="fb" id="fB"></div>
-    <div id="pA"></div>
-    <div class="empty" id="pE" style="display:none"><div>✎</div><h3>아직 글이 없어요</h3><p>첫 기록을 시작해보세요</p></div>
+    <div id="homeSections"></div>
   </div>
 </div>
 
@@ -2004,14 +2018,25 @@ footer{text-align:center;padding:32px;color:var(--text-light);font-size:.68rem;b
       <div class="ab-body">
         <div style="display:flex;flex-direction:column;gap:10px">
           <label style="font-size:.85rem;display:flex;align-items:center;gap:10px;cursor:pointer">
-            <input type="checkbox" id="cHidePair" onchange="cfg.hidePair=this.checked;sv();rCustomTabNav();updateBaseTabsVisibility()">
+            <input type="checkbox" id="cHidePair" onchange="cfg.hidePair=this.checked;sv();rCustomTabNav();updateBaseTabsVisibility();rHomeSecAdmin()">
             <span>페어 탭 숨기기 <span style="color:var(--text-light);font-size:.78rem">(다른 사람에게는 페어 탭이 안 보여요)</span></span>
           </label>
           <label style="font-size:.85rem;display:flex;align-items:center;gap:10px;cursor:pointer">
-            <input type="checkbox" id="cHidePrompt" onchange="cfg.hidePrompt=this.checked;sv();rCustomTabNav();updateBaseTabsVisibility()">
+            <input type="checkbox" id="cHidePrompt" onchange="cfg.hidePrompt=this.checked;sv();rCustomTabNav();updateBaseTabsVisibility();rHomeSecAdmin()">
             <span>페르소나 탭 숨기기 <span style="color:var(--text-light);font-size:.78rem">(다른 사람에게는 페르소나 탭이 안 보여요)</span></span>
           </label>
         </div>
+      </div>
+    </div>
+
+    <div class="ab">
+      <div class="ab-head"><div class="ab-icon"><svg viewBox="0 0 24 24"><path d="M3 9h18M9 21V9"/><rect x="3" y="3" width="18" height="18" rx="2"/></svg></div><div class="ab-title-wrap"><h3>홈 표시 카테고리</h3><div class="ab-sub">블로그 홈에 어떤 카테고리의 최신 4개를 보여줄지 선택해요 (드래그로 순서 변경)</div></div></div>
+      <div class="ab-body">
+        <div id="homeSecAdminList" style="display:flex;flex-direction:column;gap:8px"></div>
+        <div style="font-size:.7rem;color:var(--text-light);line-height:1.6;padding:10px 14px;background:var(--bg2);border-radius:8px;margin-top:12px">
+          💡 체크된 카테고리만 홈에 표시돼요. 항목을 드래그해서 순서를 바꿀 수 있어요.
+        </div>
+        <div class="ed-b" style="margin-top:14px"><button class="btn-p" onclick="saveCfg()">Save</button></div>
       </div>
     </div>
 
@@ -2591,12 +2616,253 @@ function rHome(){
   var h=$('#hero');
   if(cfg.hbg){h.style.backgroundImage='url('+cfg.hbg+')';h.classList.add('has-bg')}
   else{h.style.backgroundImage='';h.classList.remove('has-bg')}
-  rPosts();
+  rHomeSections();
 }
 
 function mkG(a){return '<div class="grid g2">'+a.map(function(p){return pcC(p)}).join('')+'</div>'}
 function mkL(a){return '<div class="grid g1">'+a.map(function(p){return lcC(p)}).join('')+'</div>'}
 function mkM(a){if(a.length<2)return mkG(a);return '<div class="mag"><div class="mag-main">'+pcC(a[0],280)+'</div><div class="mag-side">'+a.slice(1,3).map(function(p){return pcC(p,140)}).join('')+'</div></div>'}
+
+/* ═══════════════ HOME SECTIONS ═══════════════ */
+// 홈에 표시 가능한 카테고리 목록 반환
+function getHomeAvailable(){
+  var list=[];
+  if(!cfg.hidePair)list.push({key:'pair',label:'PAIR',target:'pair'});
+  if(!cfg.hidePrompt){
+    list.push({key:'persona',label:'PERSONA',target:'prompt'});
+    list.push({key:'prompt',label:'PROMPT',target:'prompt'});
+  }
+  (cfg.customTabs||[]).forEach(function(t){
+    if(t.private&&!isAdmin)return;
+    list.push({key:t.id,label:(t.name||'').toUpperCase(),target:t.id,ctId:t.id});
+  });
+  return list;
+}
+
+// 각 카테고리별 최신 N개 가져오기
+function getHomeSecItems(key,limit){
+  limit=limit||4;
+  if(key==='pair'){
+    var list=(pairs||[]).filter(function(p){return isAdmin||!p.private});
+    list.sort(function(a,b){return(b.ts||0)-(a.ts||0)});
+    return list.slice(0,limit);
+  }
+  if(key==='persona'){
+    var list=(prompts||[]).filter(function(p){return p.type==='persona'&&(isAdmin||p.priv!=='hidden')});
+    list.sort(function(a,b){return(b.ts||0)-(a.ts||0)});
+    return list.slice(0,limit);
+  }
+  if(key==='prompt'){
+    var list=(prompts||[]).filter(function(p){return p.type==='prompt'&&(isAdmin||p.priv!=='hidden')});
+    list.sort(function(a,b){return(b.ts||0)-(a.ts||0)});
+    return list.slice(0,limit);
+  }
+  if(key.indexOf('ct_')===0){
+    // key는 이미 'ct_xxx' 전체 형태이므로 그대로 사용
+    var tabId=key;
+    var arr=(cfg.ctData&&cfg.ctData[tabId])?cfg.ctData[tabId]:[];
+    var list=arr.filter(function(p){return isAdmin||!p.priv||p.priv==='pw';});
+    list.sort(function(a,b){var ta=a.ts||0,tb=b.ts||0;return tb-ta;});
+    return list.slice(0,limit);
+  }
+  return [];
+}
+
+// 카테고리별 카드 렌더링
+function renderHomeSecCard(key,item){
+  if(key==='pair'){
+    var dday=calcDday(item.date);
+    var img='';
+    if(item.thumb)img='<img src="'+item.thumb+'" style="width:100%;height:100%;object-fit:cover">';
+    else if(item.imgA||item.imgB){
+      img='<div style="display:flex;width:100%;height:100%">';
+      img+='<div style="flex:1;overflow:hidden"><img src="'+(item.imgA||'')+'" style="width:100%;height:100%;object-fit:cover"></div>';
+      img+='<div style="flex:1;overflow:hidden"><img src="'+(item.imgB||'')+'" style="width:100%;height:100%;object-fit:cover"></div>';
+      img+='</div>';
+    }else{
+      img='<div style="font-size:2rem;opacity:.2">💞</div>';
+    }
+    var h='<div class="pair-card" onclick="openPairDetailSafe(\''+item.id+'\')">';
+    h+='<div class="pair-card-img">'+img+'</div>';
+    h+='<div class="pair-card-body">';
+    h+='<div class="pair-card-names">'+esc(item.nameA||'')+'<span class="x">×</span>'+esc(item.nameB||'')+'</div>';
+    h+='<div class="pair-card-dday">'+dday.label+'</div>';
+    h+='<div class="pair-card-date">'+item.date+'</div>';
+    h+='</div></div>';
+    return h;
+  }
+  if(key==='persona'||key==='prompt'){
+    var cardImg=(typeof getImgs==='function'?getImgs(item)[0]:'')||'';
+    var isPw=item.priv==='pw'&&!isAdmin;
+    var isHidden=item.priv==='hidden';
+    var isNsfwBlur=item.nsfw&&!isAdmin&&(typeof pmt19Unlocked==='undefined'||!pmt19Unlocked);
+    var imgStyle=isNsfwBlur?' style="filter:blur(8px);transform:scale(1.1)"':'';
+    var badge='';
+    if(item.nsfw)badge+='<div class="pmt-card-nsfw">NSFW</div>';
+    var h='<div class="pmt-card" onclick="openPmtModal('+item.id+')">';
+    h+=isPw?'<div style="position:absolute;inset:0;background:var(--bg2);display:flex;align-items:center;justify-content:center"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--text-light)" stroke-width="1.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>':'<img src="'+cardImg+'" loading="lazy"'+imgStyle+'>';
+    h+='<div class="pmt-card-dim"></div>';
+    h+=badge;
+    h+='<div class="pmt-card-body"><div class="pmt-card-title">'+esc(item.title||'')+'</div></div>';
+    h+='</div>';
+    return h;
+  }
+  // 커스텀 탭 항목 — 간단한 카드 형식 (제목 + 날짜)
+  var ctImg='';
+  if(item.cov)ctImg='<div class="pc-bg" style="background-image:url('+item.cov+')"></div>';
+  else if(item.thumb)ctImg='<div class="pc-bg" style="background-image:url('+item.thumb+')"></div>';
+  var ctTitle=item.t||item.title||item.name||'(제목 없음)';
+  var ctDate=item.d||item.date||'';
+  var clickFn=item.id?('openCtItem&&typeof openCtItem===\'function\'?openCtItem(\''+key+'\','+JSON.stringify(item.id)+'):null'):'null';
+  var h='<div class="pc" style="height:240px" onclick="go(\''+key+'\')">';
+  h+=ctImg||'<div class="pc-bg" style="background:var(--bg2)"></div>';
+  h+='<div class="pc-dim"></div>';
+  h+='<div class="pc-body">';
+  h+='<div class="pc-title">'+esc(ctTitle)+'</div>';
+  if(ctDate)h+='<div class="pc-foot"><span>'+esc(ctDate)+'</span></div>';
+  h+='</div></div>';
+  return h;
+}
+
+// 화살표 클릭 시 이동할 페이지
+function gotoHomeSec(key){
+  if(key==='pair')go('pair');
+  else if(key==='persona'){curPromptTab='persona';go('prompt');setTimeout(function(){if(typeof rPromptGrid==='function')rPromptGrid();},50);}
+  else if(key==='prompt'){curPromptTab='prompt';go('prompt');setTimeout(function(){if(typeof rPromptGrid==='function')rPromptGrid();},50);}
+  else if(key.indexOf('ct_')===0)go(key);
+}
+
+// 홈 섹션 렌더링
+function rHomeSections(){
+  var wrap=$('#homeSections');
+  if(!wrap)return;
+  var avail=getHomeAvailable();
+  var availKeys=avail.map(function(x){return x.key;});
+  // 설정된 순서 + 체크된 것만
+  var selected=(cfg.homeSections||[]).filter(function(k){return availKeys.indexOf(k)!==-1;});
+  // 처음 사용 시 기본값: 페어 + 페르소나
+  if(!cfg.homeSections){
+    selected=[];
+    if(availKeys.indexOf('pair')!==-1)selected.push('pair');
+    if(availKeys.indexOf('persona')!==-1)selected.push('persona');
+  }
+  if(!selected.length){
+    wrap.innerHTML='';
+    $('#pE').style.display='';
+    return;
+  }
+  $('#pE').style.display='none';
+  var arrowSvg='<svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>';
+  var html=selected.map(function(key){
+    var info=avail.find(function(x){return x.key===key;});
+    if(!info)return '';
+    var items=getHomeSecItems(key,4);
+    var inner;
+    if(!items.length){
+      inner='<div class="home-sec-empty">아직 항목이 없어요</div>';
+    }else{
+      inner='<div class="home-sec-grid">'+items.map(function(it){return renderHomeSecCard(key,it);}).join('')+'</div>';
+    }
+    return '<div class="home-section">'
+      +'<div class="home-sec-head" onclick="gotoHomeSec(\''+key+'\')">'
+      +'<span class="home-sec-label">'+esc(info.label)+'</span>'
+      +'<span class="home-sec-line"></span>'
+      +'<span class="home-sec-arrow">'+arrowSvg+'</span>'
+      +'</div>'
+      +inner
+      +'</div>';
+  }).join('');
+  wrap.innerHTML=html;
+}
+
+/* === 관리 탭: 홈 표시 카테고리 설정 === */
+function rHomeSecAdmin(){
+  var box=$('#homeSecAdminList');
+  if(!box)return;
+  var avail=getHomeAvailable();
+  if(!avail.length){
+    box.innerHTML='<div style="font-size:.78rem;color:var(--text-light);padding:14px 0">표시 가능한 카테고리가 없어요. 페어/페르소나 탭을 숨김 해제하거나 커스텀 탭을 추가해주세요.</div>';
+    return;
+  }
+  if(!cfg.homeSections){
+    cfg.homeSections=[];
+    if(avail.find(function(x){return x.key==='pair';}))cfg.homeSections.push('pair');
+    if(avail.find(function(x){return x.key==='persona';}))cfg.homeSections.push('persona');
+  }
+  var availKeys=avail.map(function(x){return x.key;});
+  cfg.homeSections=cfg.homeSections.filter(function(k){return availKeys.indexOf(k)!==-1;});
+  // 순서: 선택된 것 먼저, 미선택은 뒤에
+  var ordered=cfg.homeSections.slice();
+  avail.forEach(function(x){if(ordered.indexOf(x.key)===-1)ordered.push(x.key);});
+  box.innerHTML=ordered.map(function(k,idx){
+    var info=avail.find(function(x){return x.key===k;});
+    if(!info)return '';
+    var checked=cfg.homeSections.indexOf(k)!==-1;
+    return '<div class="home-sec-admin-row" draggable="true" data-key="'+k+'" data-idx="'+idx+'" '
+      +'style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg2);border-radius:8px;cursor:grab;user-select:none">'
+      +'<span style="color:var(--text-light);font-size:.78rem;font-family:monospace">⋮⋮</span>'
+      +'<input type="checkbox" '+(checked?'checked':'')+' onchange="toggleHomeSec(\''+k+'\',this.checked)" style="width:auto;margin:0;cursor:pointer">'
+      +'<span style="flex:1;font-size:.85rem;font-weight:500;letter-spacing:.05em">'+esc(info.label)+'</span>'
+      +'<span style="font-size:.72rem;color:var(--text-light)">최신 4개</span>'
+      +'</div>';
+  }).join('');
+  bindHomeSecDrag();
+}
+
+function toggleHomeSec(key,on){
+  if(!cfg.homeSections)cfg.homeSections=[];
+  var i=cfg.homeSections.indexOf(key);
+  if(on&&i===-1)cfg.homeSections.push(key);
+  else if(!on&&i!==-1)cfg.homeSections.splice(i,1);
+  sv();
+  rHomeSecAdmin();
+}
+
+function bindHomeSecDrag(){
+  var box=$('#homeSecAdminList');
+  if(!box)return;
+  var rows=box.querySelectorAll('.home-sec-admin-row');
+  var dragKey=null;
+  rows.forEach(function(row){
+    row.addEventListener('dragstart',function(e){
+      dragKey=row.getAttribute('data-key');
+      row.style.opacity='.4';
+      e.dataTransfer.effectAllowed='move';
+    });
+    row.addEventListener('dragend',function(){
+      row.style.opacity='';
+      rows.forEach(function(r){r.style.borderTop='';});
+    });
+    row.addEventListener('dragover',function(e){
+      e.preventDefault();
+      e.dataTransfer.dropEffect='move';
+      rows.forEach(function(r){r.style.borderTop='';});
+      row.style.borderTop='2px solid var(--text)';
+    });
+    row.addEventListener('drop',function(e){
+      e.preventDefault();
+      var targetKey=row.getAttribute('data-key');
+      if(!dragKey||dragKey===targetKey)return;
+      // 선택된 목록에서만 순서 변경 (미선택은 자동 뒤로)
+      if(!cfg.homeSections)cfg.homeSections=[];
+      var arr=cfg.homeSections.slice();
+      var di=arr.indexOf(dragKey),ti=arr.indexOf(targetKey);
+      if(di===-1&&ti===-1){
+        // 둘 다 미선택이면 무시
+      }else if(di!==-1&&ti!==-1){
+        arr.splice(di,1);
+        var newTi=arr.indexOf(targetKey);
+        arr.splice(newTi,0,dragKey);
+      }else if(di===-1&&ti!==-1){
+        // 미선택 → 선택목록 안으로 넣기
+        arr.splice(ti,0,dragKey);
+      }
+      cfg.homeSections=arr;
+      sv();
+      rHomeSecAdmin();
+    });
+  });
+}
 
 var _svgLock='<svg class="sb-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>';
 var _svgLockDot='<svg class="sb-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><line x1="12" y1="15" x2="12" y2="18"/></svg>';
@@ -3429,6 +3695,7 @@ function rAdmin(){
   $('#acBar').innerHTML=AC.map(function(c){return '<div class="cb'+((cfg.accent||'#1A1A1A').toUpperCase()===c.toUpperCase()?' on':'')+'" style="background:'+c+'" onclick="cfg.accent=\''+c+'\';applyAcc();rAdmin()"></div>'}).join('');
   rHeartLinkList();
   loadMyBannerFields();
+  rHomeSecAdmin();
 }
 
 // 기본 카테고리(페어/페르소나) 탭 표시 토글
