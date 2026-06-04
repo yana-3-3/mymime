@@ -3874,6 +3874,8 @@ var editingMsgIdx=null;
 function rPair(){
   var grid=$('#pairGrid');
   var pagi=$('#pairPagi');
+  // 이전에 설정된 minHeight 초기화 (페이지 넘어갈 때 박스 길어짐 방지)
+  if(grid)grid.style.minHeight='';
   // private 필터링
   var visiblePairs=pairs.filter(function(p){return !p.private||isAdmin;});
   if(!visiblePairs.length){
@@ -6094,7 +6096,9 @@ function rPromptGrid(){
   // Sort newest first
   list.sort(function(a,b){return(b.ts||0)-(a.ts||0)});
   var grid=$('#pmtGrid'),empty=$('#pmtEmpty'),pagi=$('#pmtPagi');
-  if(!list.length){grid.innerHTML='';grid.style.minHeight='';empty.style.display='';if(pagi)pagi.innerHTML='';return;}
+  // 이전 minHeight 초기화 (페이지 넘어갈 때 박스 길어짐 방지)
+  if(grid)grid.style.minHeight='';
+  if(!list.length){grid.innerHTML='';empty.style.display='';if(pagi)pagi.innerHTML='';return;}
   empty.style.display='none';
   // Pagination (8 per page)
   var perPage=8;
